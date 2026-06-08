@@ -407,6 +407,13 @@ docker compose ps
 
 This test distinguishes application liveness from downstream dependency availability. It is not a retry implementation.
 
+### Dependency reproducibility decision:
+
+The project currently declares direct dependency ranges in pyproject.toml and does not commit a lock file. This is acceptable for the initial local learning setup, but it does not guarantee an identical transitive dependency graph across installations.
+
+Before introducing CI or preparing a reproducible release, the project will select one dependency locking workflow and commit its generated lock artifact. Multiple competing lock formats will not
+be maintained.
+
 ## Run quality checks
 
 From the repository root:
@@ -529,3 +536,4 @@ The initial infrastructure slice deliberately excludes:
 - outbox, retry, and dead-letter processing;
 - Mirth or HL7v2;
 - AWS deployment.
+
