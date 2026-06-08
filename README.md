@@ -146,6 +146,9 @@ python -m pip check
 
 The project currently declares dependency ranges in `pyproject.toml`, but no Python lock file is committed. Exact transitive dependency reproduction is therefore not yet guaranteed.
 
+The development dependencies include `httpx2`, which is used by the current
+Starlette/FastAPI TestClient integration.
+
 ## Configure local environment variables
 
 Copy the example file.
