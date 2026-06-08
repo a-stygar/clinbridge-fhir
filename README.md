@@ -1,35 +1,69 @@
 # clinbridge-fhir
 
-призначення проєкту:
-ClinBridge - FHIR intergation application, який приймає довільні дані (JSON) віl upstream
-    клієнта, перетворює іх у FHIR формат, дадсилає дані у HAPI серер, який зберігає дані у HAPI PostgreSL DB
+## Призначення
 
-вимоги до Python:
-    Python 3.12+
+ClinBridge — навчальний healthcare-interoperability application для побудови
+integration layer між нестандартними вхідними даними та downstream FHIR R4 server.
 
-створення virtual environment:
-    python3.14 -m venv .venv
+## Вимоги
+
+- Python 3.12+
+- Docker Engine
+- Docker Compose plugin
+
+Поточне локальне середовище перевірене на Python 3.14.5.
+
+## Створення virtual environment:
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+    python -m pip install --upgrade pip
+    python -m pip install -e ".[dev]"
 
 команда встановлення dependencies:
 
-копіювання .env.example -> .env:
-    .env не комітиться
+## Copy .env.example -> .env:
+    cp .env.example .env
 
-docker compose up -d;
+## Запуск інфраструктури
 
-health і metadata smoke checks:
-    uvicorn app.main:app --reload
-    pytest
+```bash
+docker compose config
+docker compose up -d
+docker compose ps
+```
+
+## Запуск FastAPI
+
+```bash
+uvicorn app.main:app --reload
+```
+
+## Health і metadata smoke checks:
+    ```bash
+    python -m pytest
     ruff check .
     ruff format --check .
-    pytest
+    python -m pip check
+    ```
+    ```bash
+    curl -fsS http://localhost:8000/health
+    ```
+    ```bash
+    curl -fsS \
+    -H "Accept: application/fhir+json" \
+    http://localhost:8080/fhir/metadata
+    ```
+    ```bash
     docker compose logs -f hapi-fhir
+    ```
 
-PostgreSQL v17
-HAPI v8.10.0-1
+## Зафіксовані container images
 
-пояснення topology:
-    приймає довільні дані (JSON) віl upstream
-    клієнта, перетворює іх у FHIR формат, дадсилає дані у HAPI серер, який зберігає дані у HAPI PostgreSL DB
+- PostgreSQL: `postgres:17` — major-version pin; фактичний patch version перевіряється через
+  `SELECT version()`.
+- HAPI FHIR JPA Server: `hapiproject/hapi:v8.10.0-1`.
+- FHIR version:  `4.0.1`,
 
-!середовище локальне й без authentication!
+> **Local development only:** HAPI працює без authentication і призначений лише для synthetic data.
+> Ця конфігурація не є production deployment.
