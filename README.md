@@ -1,375 +1,262 @@
-# ClinBridge Architecture
+# ClinBridge FHIR
 
-## 1. Purpose
+ClinBridge is a healthcare interoperability learning and portfolio project.
 
-ClinBridge is a healthcare integration application that will receive non-FHIR healthcare input, preserve the original evidence, normalize the input into a domain-specific canonical model, map it deterministically to FHIR R4, validate the output, and deliver it to a downstream FHIR server.
+The application is being built as an integration layer between non-FHIR healthcare inputs and a downstream FHIR R4 server. Its long-term responsibilities include preserving source payloads, normalizing them into an internal canonical model, mapping them deterministically to FHIR R4, validating the result, delivering it reliably, and recording processing evidence.
 
-ClinBridge is not a FHIR repository implementation. In the local environment, HAPI FHIR is treated as an external downstream system with its own API, data model, persistence lifecycle, and schema ownership.
+ClinBridge is **not** a custom FHIR server. The local environment uses HAPI FHIR as a separate downstream FHIR repository and API.
 
-The project starts as a modular monolith. This keeps the integration pipeline explicit and avoids introducing distributed-system complexity before it is justified.
+## Current status
 
-## 2. Current Day 0 topology
+The project is currently in its initial infrastructure slice.
 
-The current executable topology is:
+Implemented:
+
+- FastAPI application skeleton;
+- `GET /health`;
+- pytest smoke test;
+- Ruff configuration;
+- local ClinBridge PostgreSQL service;
+- separate PostgreSQL service for HAPI FHIR;
+- HAPI FHIR JPA Server configured in R4 mode;
+- architecture and terminology documentation.
+
+Not implemented yet:
+
+- referral ingestion;
+- canonical healthcare models;
+- FHIR resource mapping;
+- FHIR validation pipeline;
+- transaction Bundles;
+- idempotency and outbox delivery;
+- retry, dead-letter, and replay;
+- OAuth2 or SMART Backend Services;
+- HL7v2 or Mirth integration.
+
+The repository contains only synthetic development data. It is not a production healthcare deployment.
+
+## Architecture
 
 ```text
 Developer / test client
         |
-        | HTTP :8000
-        v
-ClinBridge FastAPI
+        +--> ClinBridge FastAPI :8000
+        |       |
+        |       +--> ClinBridge PostgreSQL :5432
         |
-        | GET /health
-        v
-Process-local health response
-
-
-Developer / test client
-        |
-        | PostgreSQL protocol :5432
-        v
-ClinBridge PostgreSQL
-        |
-        v
-clinbridge_postgres_data
-
-
-Developer / test client
-        |
-        | HTTP :8080/fhir
-        v
-HAPI FHIR JPA Server
-        |
-        | JDBC inside Docker network
-        | jdbc:postgresql://hapi-db:5432/hapi
-        v
-HAPI PostgreSQL
-        |
-        v
-hapi_postgres_data
+        +--> HAPI FHIR R4 :8080/fhir
+                |
+                +--> HAPI PostgreSQL
 ```
 
-At this stage:
-
-* ClinBridge exposes only the health endpoint;
-* ClinBridge persistence models are not implemented yet;
-* the ClinBridge PostgreSQL service establishes the future application-owned persistence boundary;
-* HAPI exposes the downstream FHIR API;
-* HAPI persists its internal state in its own PostgreSQL service;
-* the test client calls ClinBridge and HAPI separately for smoke verification;
-* a ClinBridge outbound FHIR client has not yet been implemented.
-
-The documentation must not imply that a data pipeline exists before the corresponding code is present.
-
-## 3. Planned integration flow
-
-The planned high-level flow is:
+ClinBridge and HAPI have separate persistence ownership:
 
 ```text
-Upstream healthcare source
-        |
-        | custom JSON initially
-        | HL7v2 through Mirth later
-        v
-ClinBridge inbound adapter
-        |
-        v
-Raw source payload preservation
-        |
-        v
-Domain-specific canonical referral model
-        |
-        v
-Deterministic canonical-to-FHIR mapping
-        |
-        v
-FHIR R4 validation
-        |
-        v
-Reliable delivery boundary
-        |
-        | FHIR HTTP API
-        v
-Downstream HAPI FHIR server
-        |
-        v
-HAPI-owned FHIR persistence
+ClinBridge database
+  Future ClinBridge-owned raw payloads, workflow state,
+  idempotency records, outbox entries, and operational audit.
+
+HAPI database
+  HAPI-owned FHIR resources, versions, indexes, and internal JPA schema.
 ```
 
-Later delivery reliability will include local idempotency, outbox processing, bounded retry, dead-letter handling, replay controls, and operational audit. Those components are planned responsibilities, not current Day 0 capabilities.
+ClinBridge may communicate with HAPI only through the FHIR HTTP API. It must not read or modify HAPI's internal database tables.
 
-## 4. Runtime components
+See [docs/architecture.md](docs/architecture.md) for the complete boundary description.
 
-### 4.1 ClinBridge FastAPI
+## Technology baseline
 
-Current responsibilities:
+| Component | Current baseline |
+|---|---|
+| Python | `>=3.12` |
+| Web framework | FastAPI |
+| ASGI server | Uvicorn |
+| Tests | pytest |
+| Linting and formatting | Ruff |
+| ClinBridge database | PostgreSQL 17 |
+| HAPI database | PostgreSQL 17 |
+| FHIR server | HAPI FHIR JPA Server |
+| HAPI image | `hapiproject/hapi:v8.10.0-1` |
+| FHIR family | R4 |
+| Project FHIR baseline | FHIR R4 4.0.1 |
+| Local orchestration | Docker Compose |
 
-* application composition;
-* HTTP process boundary;
-* `GET /health`;
-* future inbound API endpoints.
+The PostgreSQL images are pinned to the major version `17`, not to an exact patch version or image digest. The actual runtime patch version must therefore be recorded from the running containers.
 
-Future responsibilities:
+## Prerequisites
 
-* source request acceptance;
-* configuration and dependency wiring;
-* canonical validation;
-* mapping orchestration;
-* downstream FHIR client coordination;
-* structured error responses;
-* operational endpoints.
+Required locally:
 
-ClinBridge routes should remain thin. Business and interoperability decisions should not accumulate inside FastAPI route functions.
+- Git;
+- Python 3.12 or newer;
+- Docker Engine or Docker Desktop;
+- Docker Compose plugin;
+- `curl`, or an equivalent HTTP client.
 
-### 4.2 ClinBridge PostgreSQL
+Check the main tools:
 
-Current purpose:
+```bash
+git --version
+python --version
+docker --version
+docker compose version
+```
 
-* reserve and verify a separate application-owned persistence boundary;
-* prove local connectivity and volume isolation.
+## Clone the repository
 
-Future data may include:
+```bash
+git clone https://github.com/a-stygar/clinbridge-fhir.git
+cd clinbridge-fhir
+```
 
-* raw source messages;
-* source identity and correlation identifiers;
-* canonical processing state;
-* idempotency or inbox records;
-* outbox entries;
-* delivery attempts;
-* dead-letter state;
-* replay decisions;
-* append-only operational audit.
+Confirm that the shell and Git point to the intended clone:
 
-ClinBridge migrations will apply only to the ClinBridge database.
+```bash
+pwd
+git rev-parse --show-toplevel
+git rev-parse HEAD
+git status --short
+```
 
-### 4.3 HAPI FHIR JPA Server
+In PowerShell, use `Get-Location` instead of `pwd` when preferred.
 
-HAPI responsibilities include:
+## Create the Python environment
 
-* exposing FHIR REST endpoints;
-* parsing and processing supported FHIR interactions;
-* assigning and managing server-local resource identity;
-* persisting FHIR resources and versions;
-* maintaining FHIR search indexes;
-* advertising supported behavior through a `CapabilityStatement`.
+### Linux or macOS
 
-HAPI is a downstream dependency. It is not an internal ClinBridge module.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 
-### 4.4 HAPI PostgreSQL
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m pip check
+```
 
-The HAPI database contains implementation-specific JPA persistence structures owned by HAPI.
+### Windows PowerShell
 
-Its tables are not:
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-* ClinBridge domain models;
-* a public integration contract;
-* a substitute for the FHIR API;
-* a supported source for ClinBridge joins or reports;
-* a target for ClinBridge Alembic migrations.
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m pip check
+```
 
-The HAPI schema may change when HAPI is upgraded. ClinBridge must therefore remain independent of it.
+The project currently declares dependency ranges in `pyproject.toml`, but no Python lock file is committed. Exact transitive dependency reproduction is therefore not yet guaranteed.
 
-## 5. Deployment view
+Before treating the environment as reproducible, verify that the development dependency list contains the real `httpx` package required by FastAPI's `TestClient`, rather than the unrelated `httpx2` package.
 
-Current local deployment:
+## Configure local environment variables
 
-| Component             | Runtime location     | Host exposure    | Persistent storage         |
-| --------------------- | -------------------- | ---------------- | -------------------------- |
-| ClinBridge FastAPI    | Local Python process | `localhost:8000` | None yet                   |
-| ClinBridge PostgreSQL | Docker container     | `localhost:5432` | `clinbridge_postgres_data` |
-| HAPI PostgreSQL       | Docker container     | `localhost:5433` | `hapi_postgres_data`       |
-| HAPI FHIR             | Docker container     | `localhost:8080` | Through HAPI PostgreSQL    |
+Copy the example file.
 
-The host port `5433` exists for local diagnostics. HAPI itself connects to `hapi-db:5432` through the Docker Compose network.
+### Linux or macOS
 
-The current use of separate PostgreSQL containers is a verification and ownership choice. The essential architectural invariant is logical isolation: separate databases, roles, credentials, schemas, migrations, and ownership. A later environment could place both databases on one managed PostgreSQL server without allowing schema coupling.
+```bash
+cp .env.example .env
+```
 
-## 6. System ownership
+### Windows PowerShell
 
-### 6.1 ClinBridge owns
+```powershell
+Copy-Item .env.example .env
+```
 
-ClinBridge owns, or will own:
+The committed values are local-development examples only:
 
-* inbound integration workflow;
-* source-system contracts;
-* preservation of raw source payloads;
-* correlation identifiers;
-* canonical normalization rules;
-* canonical-to-FHIR mapping rules;
-* mapping versions;
-* validation orchestration;
-* delivery state;
-* retry classification;
-* replay policy;
-* local idempotency state;
-* outbox and delivery-attempt records;
-* operational audit.
+```dotenv
+APP_ENV=local
+APP_NAME=ClinBridge
 
-### 6.2 HAPI owns
+CLINBRIDGE_DATABASE_URL=postgresql+psycopg://clinbridge:clinbridge@localhost:5432/clinbridge
 
-HAPI owns:
+FHIR_BASE_URL=http://localhost:8080/fhir
 
-* the FHIR REST implementation;
-* its `CapabilityStatement`;
-* FHIR resource persistence;
-* server-assigned resource ids;
-* resource version history;
-* search indexes;
-* supported server operations;
-* its internal JPA database schema;
-* HAPI-specific migrations and upgrades.
+CLINBRIDGE_DB_NAME=clinbridge
+CLINBRIDGE_DB_USER=clinbridge
+CLINBRIDGE_DB_PASSWORD=clinbridge
 
-### 6.3 Upstream sources own
+HAPI_DB_NAME=hapi
+HAPI_DB_USER=hapi
+HAPI_DB_PASSWORD=hapi
+```
 
-An upstream system owns the meaning and authority of the data it sends, including:
+Do not place production credentials, tokens, certificates, or real patient data in `.env` or any committed file.
 
-* source message identity;
-* source business identifiers;
-* source timestamps;
-* source terminology;
-* the distinction between known, absent, and inferred information.
+## Start the infrastructure
 
-ClinBridge must not invent clinical meaning that is absent from the source contract.
+Validate the resolved Compose configuration:
 
-## 7. Persistence ownership
+```bash
+docker compose config
+```
+
+Start the three services:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Expected services:
 
 ```text
-ClinBridge code
-    |
-    | SQLAlchemy / migrations later
-    v
-ClinBridge database only
-
-
-ClinBridge code
-    |
-    | FHIR HTTP
-    v
-HAPI FHIR server
-    |
-    | HAPI JPA
-    v
-HAPI database only
+clinbridge-db
+hapi-db
+hapi-fhir
 ```
 
-The two databases have different responsibilities and different lifecycles.
+Follow HAPI startup logs when necessary:
 
-| Concern                   | ClinBridge database | HAPI database |
-| ------------------------- | ------------------: | ------------: |
-| Raw inbound payload       |          Yes, later |            No |
-| Source message identity   |          Yes, later |            No |
-| Idempotency record        |          Yes, later |            No |
-| Outbox state              |          Yes, later |            No |
-| Delivery attempts         |          Yes, later |            No |
-| Local pipeline audit      |          Yes, later |            No |
-| FHIR resource persistence |                  No |           Yes |
-| FHIR resource history     |                  No |           Yes |
-| HAPI search indexes       |                  No |           Yes |
-| HAPI internal schema      |                  No |           Yes |
+```bash
+docker compose logs -f hapi-fhir
+```
 
-FHIR `Provenance`, optional `AuditEvent`, and ClinBridge operational audit are separate concepts. One must not be used as a vague replacement for the others.
+The containers expose:
 
-## 8. Supported integration boundaries
+| Service | Host endpoint | Purpose |
+|---|---|---|
+| `clinbridge-db` | `localhost:5432` | ClinBridge-owned PostgreSQL |
+| `hapi-db` | `localhost:5433` | Diagnostic host access to HAPI PostgreSQL |
+| `hapi-fhir` | `http://localhost:8080/fhir` | Downstream FHIR API |
 
-Allowed boundaries:
+Inside the Compose network, HAPI connects to its database through:
 
 ```text
-Upstream source -> ClinBridge inbound contract
-ClinBridge -> ClinBridge database
-ClinBridge -> HAPI through FHIR HTTP
-HAPI -> HAPI database through HAPI-owned persistence
-Developer/test tooling -> local service endpoints for verification
+jdbc:postgresql://hapi-db:5432/hapi
 ```
 
-The intended downstream boundary is:
+It does not connect through the host port `5433`.
 
-```http
-Accept: application/fhir+json
-Content-Type: application/fhir+json
+## Run ClinBridge
+
+With the virtual environment activated:
+
+```bash
+python -m uvicorn app.main:app --reload
 ```
 
-The server's `CapabilityStatement` must be inspected before optional interactions, search parameters, or operations are assumed to exist.
-
-Advertised support is not the same as verified behavior. Important interactions require real positive and negative tests.
-
-## 9. Prohibited coupling
-
-The following are explicitly prohibited:
-
-* ClinBridge querying HAPI internal tables;
-* ClinBridge writing HAPI internal tables;
-* ClinBridge applying Alembic migrations to the HAPI database;
-* HAPI using ClinBridge application tables;
-* cross-database joins as an application integration mechanism;
-* treating an HAPI table name as a stable public contract;
-* bypassing FHIR HTTP processing to create resources through SQL;
-* placing HAPI-owned and ClinBridge-owned tables in one shared application schema;
-* reusing one database credential for both applications;
-* calling HAPI persistence failures ClinBridge domain failures without preserving the failed layer.
-
-Direct database access would bypass supported server behavior, couple ClinBridge to one HAPI version, and make replacement or upgrade of the downstream FHIR server unsafe.
-
-## 10. FHIR boundary
-
-FHIR is the downstream interoperability representation. It is not:
-
-* the original source format;
-* the raw evidence store;
-* the complete internal ClinBridge workflow model;
-* a guarantee of clinical correctness;
-* a replacement for explicit source contracts.
-
-The future ClinBridge canonical model will remain separate from both source payloads and generated FHIR resources:
+The application is available at:
 
 ```text
-Raw source representation
-        !=
-Canonical referral representation
-        !=
-FHIR output representation
+http://localhost:8000
 ```
 
-This separation supports replay, mapping-version changes, troubleshooting, and honest preservation of source evidence.
-
-## 11. Identity boundary
-
-Several identity concepts must remain distinct:
+FastAPI documentation is available at:
 
 ```text
-FHIR Resource.id
-  Technical logical identity of a resource on one FHIR server.
-
-FHIR Identifier
-  Business identity issued within a named namespace.
-
-Source message id
-  Identity of an inbound integration message.
-
-Source referral id
-  Business identity of the referral in the source system.
-
-Correlation id
-  Technical identifier used to trace one processing flow.
-
-Canonical URL
-  Stable identity of a conformance artifact such as a profile.
+http://localhost:8000/docs
 ```
 
-A server-local resource id must not be used as a national identifier, hospital MRN, or source-message id.
+## Verify ClinBridge health
 
-Patient matching and merge authority are not owned by the Day 0 system.
-
-## 12. Health and readiness
-
-### Health or liveness
-
-Current endpoint:
-
-```http
-GET /health
+```bash
+curl -fsS http://localhost:8000/health
 ```
 
-Current response:
+Expected response:
 
 ```json
 {
@@ -377,225 +264,267 @@ Current response:
 }
 ```
 
-It answers:
+This endpoint currently proves only that the ClinBridge process can serve an HTTP request. It does not verify PostgreSQL or HAPI readiness.
 
-> Can the ClinBridge process serve a basic HTTP request?
+PowerShell alternative:
 
-It does not prove:
-
-* PostgreSQL connectivity;
-* HAPI availability;
-* HAPI database availability;
-* availability of a required FHIR operation;
-* end-to-end processing readiness.
-
-### Readiness
-
-A future readiness signal may verify required dependencies and configuration. It should answer:
-
-> Can this instance currently perform the work for which it is receiving traffic?
-
-Readiness must not be added as a large generic subsystem during Day 0. The current negative test checks HAPI availability explicitly through `/metadata`.
-
-## 13. Failure-layer model
-
-Failures must be attributed to the layer that failed.
-
-```text
-Configuration layer
-  Missing or invalid settings.
-
-DNS / network layer
-  Name resolution, connection refusal, timeout.
-
-HTTP layer
-  Status code, headers, content type, raw body.
-
-FHIR layer
-  OperationOutcome, unsupported interaction, invalid resource.
-
-Canonical layer
-  Invalid normalized application data.
-
-Business-semantic layer
-  Source information cannot safely support the requested mapping.
-
-Persistence layer
-  ClinBridge database or HAPI-owned persistence failure.
+```powershell
+Invoke-RestMethod http://localhost:8000/health
 ```
 
-A single generic error such as `FHIR error` would lose retry and troubleshooting information.
+## Verify HAPI FHIR metadata
 
-For later outbound calls, ClinBridge should preserve HTTP evidence before attempting to parse the body as a FHIR resource.
-
-## 14. CapabilityStatement role
-
-The HAPI metadata endpoint is:
-
-```http
-GET http://localhost:8080/fhir/metadata
-Accept: application/fhir+json
+```bash
+curl -fsS \
+  -H "Accept: application/fhir+json" \
+  http://localhost:8080/fhir/metadata
 ```
 
-A `CapabilityStatement` can advertise:
-
-* FHIR version;
-* response formats;
-* server software and implementation information;
-* REST mode;
-* supported resource types;
-* resource interactions;
-* search parameters;
-* operations;
-* security declarations.
-
-It is an advertised contract, not a complete behavioral or conformance proof. Critical behavior must still be tested.
-
-## 15. Version boundaries
-
-Configured local baseline:
+Inspect at least:
 
 ```text
-PostgreSQL image:
-  postgres:17
+resourceType = CapabilityStatement
+fhirVersion
+software.name and software.version, when present
+implementation description, when present
+supported formats
+rest.mode
+advertised resource types
+advertised interactions
+```
+
+A successful `/metadata` response proves that the server advertises a FHIR capability surface. It does not prove that every advertised interaction behaves correctly for the project use case.
+
+## Verify database identity and isolation
+
+ClinBridge database:
+
+```bash
+docker compose exec clinbridge-db \
+  psql -U clinbridge -d clinbridge \
+  -c "SELECT version(), current_database(), current_user;"
+```
+
+HAPI database:
+
+```bash
+docker compose exec hapi-db \
+  psql -U hapi -d hapi \
+  -c "SELECT version(), current_database(), current_user;"
+```
+
+The outputs must demonstrate different database names and users:
+
+```text
+ClinBridge:
+  database = clinbridge
+  user     = clinbridge
+
+HAPI:
+  database = hapi
+  user     = hapi
+```
+
+Inspect schemas:
+
+```bash
+docker compose exec clinbridge-db \
+  psql -U clinbridge -d clinbridge \
+  -c "\dn"
+
+docker compose exec hapi-db \
+  psql -U hapi -d hapi \
+  -c "\dn"
+```
+
+After HAPI has started successfully, its database should contain HAPI-created objects. ClinBridge must not create, migrate, query, or modify those objects.
+
+Inspect mounted storage:
+
+```bash
+docker inspect clinbridge_postgres \
+  --format '{{range .Mounts}}{{println .Name "->" .Destination}}{{end}}'
+
+docker inspect hapi_postgres \
+  --format '{{range .Mounts}}{{println .Name "->" .Destination}}{{end}}'
+```
+
+The containers must use different named volumes.
+
+## Record runtime versions
+
+Configured values:
+
+```text
+PostgreSQL image: postgres:17
+HAPI image:       hapiproject/hapi:v8.10.0-1
+HAPI mode:        R4
+```
+
+Record observed runtime evidence rather than relying only on image labels.
+
+PostgreSQL:
+
+```bash
+docker compose exec clinbridge-db \
+  psql -U clinbridge -d clinbridge \
+  -c "SELECT version();"
+```
 
 HAPI image:
-  hapiproject/hapi:v8.10.0-1
 
-HAPI FHIR mode:
-  R4
-
-Project FHIR baseline:
-  HL7 FHIR R4 4.0.1
+```bash
+docker inspect hapi_fhir --format '{{.Config.Image}}'
 ```
 
-The repository must distinguish:
+FHIR version and HAPI software information must be taken from the actual `CapabilityStatement`.
+
+## Controlled dependency failure
+
+Stop HAPI:
+
+```bash
+docker compose stop hapi-fhir
+```
+
+Run the metadata request again:
+
+```bash
+curl -fsS \
+  -H "Accept: application/fhir+json" \
+  http://localhost:8080/fhir/metadata
+```
+
+The command must fail clearly. It must not produce a false success result.
+
+Restore HAPI:
+
+```bash
+docker compose start hapi-fhir
+docker compose ps
+```
+
+This test distinguishes application liveness from downstream dependency availability. It is not a retry implementation.
+
+## Run quality checks
+
+From the repository root:
+
+```bash
+python -m pytest
+ruff check .
+ruff format --check .
+python -m pip check
+```
+
+To confirm pytest is collecting tests from the intended clone:
+
+```bash
+python -m pytest --collect-only
+```
+
+Inspect the reported `rootdir` and collected test path.
+
+## Stop the local stack
+
+Preserve data:
+
+```bash
+docker compose down
+```
+
+Delete containers and local named volumes:
+
+```bash
+docker compose down -v
+```
+
+The `-v` form permanently deletes local PostgreSQL data for both services.
+
+## Project structure
 
 ```text
-Configured value
-  Value declared in source-controlled configuration.
-
-Observed runtime value
-  Value returned by the running process, database, image metadata,
-  or FHIR CapabilityStatement.
+clinbridge-fhir/
+├── app/
+│   ├── api/
+│   │   └── routes/
+│   │       └── health.py
+│   ├── core/
+│   ├── db/
+│   ├── tests/
+│   │   └── test_health.py
+│   └── main.py
+├── docs/
+│   ├── architecture.md
+│   └── glossary.md
+├── requests/
+├── .env.example
+├── .gitignore
+├── docker-compose.yml
+├── pyproject.toml
+└── README.md
 ```
 
-The exact observed PostgreSQL patch version, HAPI software information, and FHIR version must be recorded after runtime verification.
+## Important boundaries
 
-A mutable image such as `latest` is not allowed as the permanent project pin. Major-only PostgreSQL pinning still permits patch changes and is therefore less reproducible than a full tag or digest.
+ClinBridge owns, or will own:
 
-## 16. Security boundary
+- inbound integration workflows;
+- preservation of source payloads;
+- canonical normalization;
+- deterministic mapping decisions;
+- validation orchestration;
+- delivery state;
+- idempotency and outbox records;
+- retry and replay decisions;
+- operational audit.
 
-The Day 0 environment is intentionally local and unsecured.
+HAPI owns:
 
-Current limitations:
+- FHIR REST interactions;
+- FHIR resource persistence;
+- resource version history;
+- FHIR search indexes;
+- HAPI's internal JPA schema;
+- its advertised `CapabilityStatement`.
 
-* no HAPI authentication;
-* no HAPI authorization policy;
-* no TLS termination;
-* simple development credentials;
-* no secrets manager;
-* no production logging policy;
-* no backup or disaster-recovery configuration;
-* no production network isolation.
+Prohibited coupling:
 
-Allowed data:
+- ClinBridge must not write directly to the HAPI database;
+- ClinBridge must not query HAPI internal tables;
+- ClinBridge must not apply Alembic migrations to the HAPI database;
+- HAPI must not use ClinBridge application tables;
+- cross-database joins are not a supported integration contract.
 
-```text
-Synthetic data only
-```
+## Local security limitations
 
-Not allowed:
+The current local HAPI server:
 
-```text
-Real patient data
-Real credentials
-Production tokens
-Private certificates or keys
-Copied PHI-bearing production logs
-```
+- has no authentication;
+- has no authorization policy;
+- has no TLS termination;
+- uses simple development credentials;
+- is intended only for synthetic data;
+- is not a production service.
 
-Local HAPI access without authentication is not evidence of OAuth2 or SMART Backend Services conformance.
+A reachable local HAPI server is not evidence of SMART Backend Services conformance or production security.
 
-## 17. Modular-monolith boundary
+## Documentation
 
-ClinBridge starts as one deployable application with internal modules.
+- [Architecture and ownership boundaries](docs/architecture.md)
+- [FHIR and integration glossary](docs/glossary.md)
 
-Expected module responsibilities will eventually include:
+## Scope discipline
 
-```text
-API and inbound adapters
-Configuration
-Persistence
-Canonical referral domain
-FHIR mapping
-Validation
-Delivery client
-Outbox worker
-Audit and replay
-```
+The initial infrastructure slice deliberately excludes:
 
-These are code ownership boundaries inside one application, not independent microservices.
-
-Microservices, Kafka, and Kubernetes are outside the current demonstrated need.
-
-## 18. Planned Mirth boundary
-
-Mirth or NextGen Connect is deferred to a later slice.
-
-The planned responsibility split is:
-
-```text
-Mirth
-  MLLP transport
-  Routing
-  Basic HL7v2 structure checks
-  Minimal extraction and normalization
-  ACK/NACK handling
-  Message browsing and reprocessing
-
-ClinBridge
-  Canonical model ownership
-  Semantic validation
-  FHIR mapping
-  FHIR validation
-  Reliable downstream delivery
-  Audit and replay
-```
-
-Mirth must not become a second independent implementation of the same semantic mapper unless a separate comparison artifact is explicitly intended.
-
-## 19. Deferred concerns
-
-The following are deliberately deferred:
-
-* canonical referral models;
-* Patient and ServiceRequest mapping;
-* transaction Bundles;
-* base FHIR validation subsystem;
-* custom profiles;
-* terminology services;
-* conditional create;
-* idempotency;
-* outbox and delivery workers;
-* dead-letter and replay;
-* OAuth2 and SMART;
-* Mirth and HL7v2;
-* XML, CDA, and SOAP;
-* production deployment.
-
-Deferral is a scope decision, not a claim that these concerns are unimportant.
-
-## 20. Architecture decisions summary
-
-| Decision                                                           | Reason                                                                   |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Start with a modular monolith                                      | Keep one understandable delivery unit and explicit internal boundaries   |
-| Treat HAPI as an external downstream system                        | Preserve a standards-based HTTP integration contract                     |
-| Use separate PostgreSQL services locally                           | Make ownership and isolation visible                                     |
-| Give each database separate credentials and storage                | Prevent accidental schema coupling                                       |
-| Keep `/health` simple                                              | Avoid confusing process health with dependency readiness                 |
-| Pin the HAPI image                                                 | Prevent silent upgrades through `latest`                                 |
-| Use synthetic data only                                            | The local stack lacks production healthcare security controls            |
-| Defer Keycloak and SMART                                           | Security mechanics do not belong before the basic FHIR path exists       |
-| Preserve raw, canonical, and FHIR representations separately later | Support replay, traceability, deterministic mapping, and troubleshooting |
+- Keycloak;
+- OAuth2 and SMART;
+- Patient mapping;
+- canonical referral models;
+- transaction Bundles;
+- FHIR profile authoring;
+- terminology packages;
+- outbox, retry, and dead-letter processing;
+- Mirth or HL7v2;
+- AWS deployment.
