@@ -146,8 +146,6 @@ python -m pip check
 
 The project currently declares dependency ranges in `pyproject.toml`, but no Python lock file is committed. Exact transitive dependency reproduction is therefore not yet guaranteed.
 
-Before treating the environment as reproducible, verify that the development dependency list contains the real `httpx` package required by FastAPI's `TestClient`, rather than the unrelated `httpx2` package.
-
 ## Configure local environment variables
 
 Copy the example file.
