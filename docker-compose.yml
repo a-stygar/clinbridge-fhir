@@ -1,0 +1,79 @@
+services:
+  clinbridge-db:
+    image: postgres:17
+    container_name: clinbridge_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: clinbridge
+      POSTGRES_USER: clinbridge
+      POSTGRES_PASSWORD: clinbridge
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - clinbridge_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U clinbridge -d clinbridge",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  hapi-db:
+    image: postgres:17
+    container_name: hapi_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: hapi
+      POSTGRES_USER: hapi
+      POSTGRES_PASSWORD: hapi
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - hapi_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U hapi -d hapi",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hapi-fhir:
+    image: hapiproject/hapi:v8.10.0-1
+    container_name: hapi_fhir
+    restart: unless-stopped
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://hapi-db:5432/hapi
+      SPRING_DATASOURCE_USERNAME: hapi
+      SPRING_DATASOURCE_PASSWORD: hapi
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+
+      HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+
+      HAPI_FHIR_FHIR_VERSION: R4
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      hapi-db:
+        condition: service_healthy
+
+volumes:
+  clinbridge_postgres_data:
+  hapi_postgres_data:
