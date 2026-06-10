@@ -1,4 +1,5 @@
 @fhirBaseUrl = http://localhost:8080/fhir
+@patientId = REPLACE_AFTER_CREATE
 
 ### Create Patient
 POST {{fhirBaseUrl}}/Patient
@@ -9,7 +10,7 @@ Accept: application/fhir+json
 
 ### Read Patient
 # Replace PATIENT_ID after the create response.
-GET {{fhirBaseUrl}}/Patient/1001
+GET {{fhirBaseUrl}}/Patient/{{patientId}}
 Accept: application/fhir+json
 
 ### Negative case: endpoint/resourceType mismatch
