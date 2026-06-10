@@ -1,0 +1,37 @@
+@fhirBaseUrl = http://localhost:8080/fhir
+
+### Create Patient
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/patient-basic.json
+
+### Read Patient
+# Replace PATIENT_ID after the create response.
+GET {{fhirBaseUrl}}/Patient/1001
+Accept: application/fhir+json
+
+### Negative case: endpoint/resourceType mismatch
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "Observation",
+  "status": "final",
+  "code": {
+    "text": "Synthetic negative test"
+  }
+}
+
+### Negative case: invalid FHIR date lexical value
+
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "Patient",
+  "birthDate": "12/03/1975"
+}

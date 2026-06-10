@@ -1,0 +1,18 @@
+{
+  "resourceType": "Patient",
+  "identifier": [
+    {
+      "system": "https://clinic.example.it/id/patient",
+      "value": "PAT-0001"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Rossi",
+      "given": ["Mario"]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1975-03-12"
+}
