@@ -109,3 +109,5 @@ POST Observation to /Patient
   This is a deterministic request defect.
   Repeating the unchanged request cannot correct the endpoint/resource-type mismatch.
 ```
+Neither case justifies an uncontrolled blind-retry loop. Retry and reconciliation policy will be
+designed in a later reliability slice.
