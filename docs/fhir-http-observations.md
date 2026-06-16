@@ -97,14 +97,14 @@ Do not collapse these layers into one generic `FHIR error`.
 
 ## Retry note
 
-The two observed unsuccessful FHIR requests are deterministic for unchanged input:
+The two unsuccessful responses require different reasoning:
 
 ```text
 GET /Patient/99999
-  Repeating the same read does not create the missing resource.
+  The resource was not known to this server at the observed request time.
+  Repeating the request immediately without evidence of a state change is unlikely
+  to help, but the result is not permanently deterministic because server state may change.
 
 POST Observation to /Patient
-  Repeating the same request does not correct the endpoint/resource-type mismatch.
-```
-
-Blind retry is therefore not a fix. The request, data, endpoint, or workflow decision must change.
+  This is a deterministic request defect.
+  Repeating the unchanged request cannot correct the endpoint/resource-type mismatch.
