@@ -26,4 +26,15 @@ Accept: application/fhir+json
 GET {{fhirBaseUrl}}/Patient/{{missingPatientId}}
 Accept: application/fhir+json
 
-# POST Observation body на /Patient
+### Test endpoint/resourceType mismatch
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "Observation",
+  "status": "final",
+  "code": {
+    "text": "Synthetic mismatch example"
+  }
+}
