@@ -108,3 +108,4 @@ GET /Patient/99999
 POST Observation to /Patient
   This is a deterministic request defect.
   Repeating the unchanged request cannot correct the endpoint/resource-type mismatch.
+```
