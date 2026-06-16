@@ -1,0 +1,36 @@
+[
+  {
+    "description": "Relative literal reference",
+    "value": {
+      "reference": "Patient/123"
+    }
+  },
+  {
+    "description": "Absolute literal reference",
+    "value": {
+      "reference": "https://fhir.example.org/Patient/123"
+    }
+  },
+  {
+    "description": "Reference by business identifier",
+    "value": {
+      "identifier": {
+        "system": "https://clinic.example.it/id/patient",
+        "value": "PAT-0001"
+      }
+    }
+  },
+  {
+    "description": "Literal reference with display text",
+    "value": {
+      "reference": "Patient/123",
+      "display": "Synthetic patient"
+    }
+  },
+  {
+    "description": "Contained-reference awareness example",
+    "value": {
+      "reference": "#patient-1"
+    }
+  }
+]
