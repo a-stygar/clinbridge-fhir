@@ -7,7 +7,12 @@
 GET {{fhirBaseUrl}}/metadata
 Accept: application/fhir+json
 
-# POST /Patient
+### Create New Patient
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/patient-basic.json
 
 ### Read All Patients
 GET {{fhirBaseUrl}}/Patient?_count=10

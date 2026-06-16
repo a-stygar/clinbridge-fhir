@@ -3,16 +3,16 @@
   "identifier": [
     {
       "system": "https://clinic.example.it/id/patient",
-      "value": "PAT-0001"
+      "value": "PAT-0002"
     }
   ],
   "name": [
     {
       "use": "official",
-      "family": "Rossi",
-      "given": ["Mario"]
+      "family": "Roberti",
+      "given": ["Gianluca"]
     }
   ],
   "gender": "male",
-  "birthDate": "1975-03-12"
+  "birthDate": "1979-04-16"
 }
