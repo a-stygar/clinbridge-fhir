@@ -16,24 +16,24 @@
     "value": {
       "identifier": {
         "system": "https://clinic.example.it/id/patient",
-        "value": "PAT-0001",
-        "note": "Represents business identity. Resolution may be unsupported or produce zero, one, or multiple matches."
+        "value": "PAT-0001"
       }
-    }
+    },
+    "note": "Represents business identity. Resolution may be unsupported or produce zero, one, or multiple matches."
   },
   {
     "description": "Literal reference with display text",
     "value": {
       "reference": "Patient/123",
-      "display": "Synthetic patient",
-      "note": "Human-readable text only; it is not authoritative identity."
-    }
+      "display": "Synthetic patient"
+    },
+    "note": "Human-readable text only; it is not authoritative identity."
   },
   {
     "description": "Contained-reference awareness example",
     "value": {
-      "reference": "#patient-1",
-      "note": "Local to the containing resource and not the default ClinBridge reference strategy."
-    }
+      "reference": "#patient-1"
+    },
+    "note": "Local to the containing resource and not the default ClinBridge reference strategy."
   }
 ]
