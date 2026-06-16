@@ -12,7 +12,7 @@ POST {{fhirBaseUrl}}/Patient
 Content-Type: application/fhir+json
 Accept: application/fhir+json
 
-< ../examples/fhir/patient-basic.json
+< ../examples/fhir/patient-day-2.json
 
 ### Read All Patients
 GET {{fhirBaseUrl}}/Patient?_count=10
