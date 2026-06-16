@@ -1,0 +1,24 @@
+
+@fhirBaseUrl = http://localhost:8080/fhir
+@patientId = 1000
+@missingPatientId = 99999  
+
+### Read FHIR Server metadata
+GET {{fhirBaseUrl}}/metadata
+Accept: application/fhir+json
+
+# POST /Patient
+
+### Read All Patients
+GET {{fhirBaseUrl}}/Patient?_count=10
+Accept: application/fhir+json
+
+### Read Specific Patient
+GET {{fhirBaseUrl}}/Patient/{{patientId}}
+Accept: application/fhir+json
+
+### Test Missing Patient
+GET {{fhirBaseUrl}}/Patient/{{missingPatientId}}
+Accept: application/fhir+json
+
+# POST Observation body на /Patient
