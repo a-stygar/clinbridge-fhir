@@ -14,8 +14,6 @@
 @practitionerId = 1054
 @organizationId = 1055
 
-GET {{fhirBaseUrl}}/Patient/{{patientId}}
-
 ### Create Patient
 POST {{fhirBaseUrl}}/Patient
 Content-Type: application/fhir+json
