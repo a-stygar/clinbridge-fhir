@@ -1,10 +1,14 @@
 @fhirBaseUrl = http://localhost:8080/fhir
-@correctIdentifierSystem = "https://hospital.example.it/id/mrn"
-@correctIdentifierValue = "MRN-0001"
-@otherIdentifierSystem = "https://clinic.example.it/id/codice-fiscale"
-@otherIdentifierValue = "SYNTHETIC-CF-0001"
-@nonExistingIdentifierSystem = "https://non-existing-hospital.example.it/id/mrn"
-@nonExistingIdentifierValue = "MRN-99999"
+@correctIdentifierSystem = https://hospital.example.it/id/mrn
+@correctIdentifierValue = MRN-0001
+@otherIdentifierSystem = https://other-hospital.example.it/id/mrn
+@otherIdentifierValue = MRN-0001
+@nonExistingIdentifierSystem = https://non-existing-hospital.example.it/id/mrn
+@nonExistingIdentifierValue = MRN-99999
+@practitionerIdentifierSystem = https://clinic.example.it/id/practitioner-license
+@practitionerIdentifierValue = PRACT-001
+@organizationIdentifierSystem = https://clinic.example.it/id/organization
+@organizationIdentifierValue = HOSP-0001
 
 ### Create Patient
 POST {{fhirBaseUrl}}/Patient
@@ -12,3 +16,52 @@ Content-Type: application/fhir+json
 Accept: application/fhir+json
 
 < ../examples/fhir/patient-identifiers.json
+
+### Create Collision Patient
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/patient-identifier-collision.json
+
+### Create Practitioner
+POST {{fhirBaseUrl}}/Practitioner
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/practitioner.json
+
+### Create Organization
+POST {{fhirBaseUrl}}/Organization
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/organization.json
+
+### Search Patient by value only - broader / unsafe for automatic linking
+GET {{fhirBaseUrl}}/Patient?identifier={{correctIdentifierValue}}
+Accept: application/fhir+json
+
+
+### Search Patient by correct system and value - expected governed match
+GET {{fhirBaseUrl}}/Patient?identifier={{correctIdentifierSystem}}|{{correctIdentifierValue}}
+Accept: application/fhir+json
+
+### Search Patient by other hospital system and same visible value - namespace collision case
+GET {{fhirBaseUrl}}/Patient?identifier={{otherIdentifierSystem}}|{{otherIdentifierValue}}
+Accept: application/fhir+json
+
+
+### Search Patient by non-existing system and value - expected zero-match case
+GET {{fhirBaseUrl}}/Patient?identifier={{nonExistingIdentifierSystem}}|{{nonExistingIdentifierValue}}
+Accept: application/fhir+json
+
+
+### Search Practitioner by professional identifier
+GET {{fhirBaseUrl}}/Practitioner?identifier={{practitionerIdentifierSystem}}|{{practitionerIdentifierValue}}
+Accept: application/fhir+json
+
+
+### Search Organization by organization identifier
+GET {{fhirBaseUrl}}/Organization?identifier={{organizationIdentifierSystem}}|{{organizationIdentifierValue}}
+Accept: application/fhir+json
