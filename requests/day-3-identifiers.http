@@ -9,6 +9,12 @@
 @practitionerIdentifierValue = PRACT-001
 @organizationIdentifierSystem = https://clinic.example.it/id/organization
 @organizationIdentifierValue = HOSP-0001
+@patientId = 1052
+@collisionPatientId = 1053
+@practitionerId = 1054
+@organizationId = 1055
+
+GET {{fhirBaseUrl}}/Patient/{{patientId}}
 
 ### Create Patient
 POST {{fhirBaseUrl}}/Patient
@@ -67,17 +73,17 @@ GET {{fhirBaseUrl}}/Organization?identifier={{organizationIdentifierSystem}}|{{o
 Accept: application/fhir+json
 
 ### Get Patient 1052
-GET {{fhirBaseUrl}}/Patient/1052
+GET {{fhirBaseUrl}}/Patient/{{patientId}}
 Accept: application/fhir+json
 
 ### Get Patient 1053
-GET {{fhirBaseUrl}}/Patient/1053
+GET {{fhirBaseUrl}}/Patient/{{collisionPatientId}}
 Accept: application/fhir+json
 
 ### Get Practitioner 1054
-GET {{fhirBaseUrl}}/Practitioner/1054
+GET {{fhirBaseUrl}}/Practitioner/{{practitionerId}}
 Accept: application/fhir+json
 
 ### Get Organization 1055
-GET {{fhirBaseUrl}}/Organization/1055
+GET {{fhirBaseUrl}}/Organization/{{organizationId}}
 Accept: application/fhir+json
