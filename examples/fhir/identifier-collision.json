@@ -1,0 +1,13 @@
+{
+    "resourceType": "Patient",
+    "identifier": [
+        {
+            "system": "https://clinic.example.it/id/codice-fiscale",
+            "value": "SYNTHETIC-CF-0001"
+        },
+        {
+            "system": "https://other-hospital.example.it/id/mrn",
+            "value": "MRN-0001"
+        }
+    ]
+}
