@@ -65,3 +65,19 @@ Accept: application/fhir+json
 ### Search Organization by organization identifier
 GET {{fhirBaseUrl}}/Organization?identifier={{organizationIdentifierSystem}}|{{organizationIdentifierValue}}
 Accept: application/fhir+json
+
+### Get Patient 1052
+GET {{fhirBaseUrl}}/Patient/1052
+Accept: application/fhir+json
+
+### Get Patient 1053
+GET {{fhirBaseUrl}}/Patient/1053
+Accept: application/fhir+json
+
+### Get Practitioner 1054
+GET {{fhirBaseUrl}}/Practitioner/1054
+Accept: application/fhir+json
+
+### Get Organization 1055
+GET {{fhirBaseUrl}}/Organization/1055
+Accept: application/fhir+json
