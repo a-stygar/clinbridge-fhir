@@ -1,0 +1,14 @@
+@fhirBaseUrl = http://localhost:8080/fhir
+@correctIdentifierSystem = "https://hospital.example.it/id/mrn"
+@correctIdentifierValue = "MRN-0001"
+@otherIdentifierSystem = "https://clinic.example.it/id/codice-fiscale"
+@otherIdentifierValue = "SYNTHETIC-CF-0001"
+@nonExistingIdentifierSystem = "https://non-existing-hospital.example.it/id/mrn"
+@nonExistingIdentifierValue = "MRN-99999"
+
+### Create Patient
+POST {{fhirBaseUrl}}/Patient
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/patient-identifiers.json
