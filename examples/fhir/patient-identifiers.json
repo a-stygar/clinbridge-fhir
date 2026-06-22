@@ -1,13 +1,13 @@
 {
     "resourceType": "Patient",
-    "identifiers": [
+    "identifier": [
         {
-            "system": "https://dummy-agenzia-entrate.it/cittadino/cf",
-            "value": "STYLSTDUMMY12Z98"
+            "system": "https://clinic.example.it/id/codice-fiscale",
+            "value": "SYNTHETIC-CF-0001"
         },
         {
-            "system": "https://ospedale-syntetic.it/patient",
-            "value": "PAT-00042"
+            "system": "https://hospital.example.it/id/mrn",
+            "value": "MRN-0001"
         }
     ]
 }
