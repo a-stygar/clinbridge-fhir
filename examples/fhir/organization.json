@@ -2,8 +2,8 @@
     "resourceType": "Organization",
     "identifier": [
         {
-            "system": "https://syntethic-opspedale-listino.it/other-hospital",
-            "value": "OSP-0001"
+            "system": "https://clinic.example.it/id/organization",
+            "value": "HOSP-0001"
         }
     ],
     "active": true,
