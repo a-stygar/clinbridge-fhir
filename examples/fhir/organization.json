@@ -1,0 +1,11 @@
+{
+    "resourceType": "Organization",
+    "identifier": [
+        {
+            "system": "https://syntethic-opspedale-listino.it/other-hospital",
+            "value": "OSP-0001"
+        }
+    ],
+    "active": true,
+    "name": "Other Hospital Example"
+}
