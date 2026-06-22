@@ -2,10 +2,6 @@
     "resourceType": "Patient",
     "identifier": [
         {
-            "system": "https://hospital.example.it/id/mrn",
-            "value": "MRN-0001"
-        },
-        {
             "system": "https://other-hospital.example.it/id/mrn",
             "value": "MRN-0001"
         }
