@@ -1,0 +1,13 @@
+{
+    "resourceType": "Patient",
+    "identifiers": [
+        {
+            "system": "https://dummy-agenzia-entrate.it/cittadino/cf",
+            "value": "STYLSTDUMMY12Z98"
+        },
+        {
+            "system": "https://ospedale-syntetic.it/patient",
+            "value": "PAT-00042"
+        }
+    ]
+}
