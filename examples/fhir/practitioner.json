@@ -1,13 +1,15 @@
 {
-    "resourceType": "Practicioner",
+    "resourceType": "Practitioner",
     "identifier": [
         {
-            "system": "https://ospedale-example.it/practicioner/id",
+            "system": "https://clinic.example.it/id/practitioner-license",
             "value": "PRACT-001"
         }
     ],
-    "name": {
-        "family": "Bianca",
-        "given": ["Chiara"]
-    }
+    "name": [
+        {
+            "family": "Bianca",
+            "given": ["Chiara"]
+        }
+    ]
 }
