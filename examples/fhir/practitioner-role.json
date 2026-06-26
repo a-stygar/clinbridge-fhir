@@ -1,0 +1,15 @@
+{
+    "resourceType": "PractitionerRole",
+    "active": true,
+    "practitioner": {
+        "reference": "Practitioner/1054"
+    },
+    "organization": {
+        "reference": "Organization/1055"
+    },
+    "code": [
+        {
+            "text": "Physician"
+        }
+    ]
+}

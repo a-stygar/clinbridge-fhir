@@ -1,0 +1,28 @@
+@fhirBaseUrl = http://localhost:8080/fhir
+@practitionerRoleId = 1058
+@practitionerId = 1054
+@organizationId = 1055
+
+### Create New Practiotioner Role
+POST {{fhirBaseUrl}}/PractitionerRole
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+< ../examples/fhir/practitioner-role.json
+
+### Read Practitioner Role
+GET {{fhirBaseUrl}}/PractitionerRole/{{practitionerRoleId}}
+Accept: application/fhir+json
+
+### Search Practitioner Role By Graph
+GET {{fhirBaseUrl}}/PractitionerRole?practitioner=Practitioner/{{practitionerId}}&organization=Organization/{{organizationId}}
+Accept: application/fhir+json
+
+### Delete Invalid Practitioner Role 1056
+DELETE {{fhirBaseUrl}}/PractitionerRole/1056
+Accept: application/fhir+json
+
+### Delete Invalid Practitioner Role 1057
+DELETE {{fhirBaseUrl}}/PractitionerRole/1057
+Content-Type: application/fhir+json
+Accept: application/fhir+json
