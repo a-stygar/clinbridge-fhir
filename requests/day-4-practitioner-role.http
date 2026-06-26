@@ -3,7 +3,7 @@
 @practitionerId = 1054
 @organizationId = 1055
 
-### Create New Practiotioner Role
+### Create New Practitioner Role
 POST {{fhirBaseUrl}}/PractitionerRole
 Content-Type: application/fhir+json
 Accept: application/fhir+json
